@@ -1,0 +1,23 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="earthGradient" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0061ff;stop-opacity:1" />
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#earthGradient)" filter="url(#glow)" />
+  <!-- Continents (Stylized) -->
+  <path d="M30,40 Q35,30 45,35 T60,30 T75,45 T65,60 T45,55 T30,40 Z" fill="#2ecc71" opacity="0.6" />
+  <path d="M20,60 Q25,70 40,65 T55,75 T40,85 T20,80 Z" fill="#2ecc71" opacity="0.5" />
+  <path d="M70,20 Q80,25 85,40 T75,55 T60,45 Z" fill="#2ecc71" opacity="0.4" />
+  <!-- Clouds -->
+  <path d="M20,30 Q40,20 60,30 T80,40" fill="none" stroke="white" stroke-width="2" opacity="0.3" stroke-linecap="round" />
+  <path d="M30,70 Q50,60 70,70" fill="none" stroke="white" stroke-width="3" opacity="0.2" stroke-linecap="round" />
+</svg>

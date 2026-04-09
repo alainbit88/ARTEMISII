@@ -1,0 +1,5 @@
+{
+  "name": "Artemis II Mission Control",
+  "description": "Real-time tracking and trajectory visualization for NASA's Artemis II mission to the Moon.",
+  "requestFramePermissions": []
+}

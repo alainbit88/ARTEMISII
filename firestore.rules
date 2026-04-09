@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required, immutable) - Firebase Auth UID
+    //   - email: string (required, immutable) - User email
+    //   - displayName: string (optional) - User display name
+    //   - photoURL: string (optional) - User photo URL
+    //   - role: string (required, enum: ['admin', 'user']) - User role
+    //   - createdAt: timestamp (optional) - Time of creation
+    //
+    // Collection: telemetry
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required, immutable) - UID of the user who fetched the data
+    //   - distanceFromEarth: number (required) - Distance in km
+    //   - distanceFromMoon: number (required) - Distance in km
+    //   - velocity: number (required) - Velocity in km/h
+    //   - status: string (required) - Mission status
+    //   - timestamp: timestamp (required) - Time of fetch
+    //   - coordinates: map (optional) - 3D coordinates {x, y, z}
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        ((request.auth.token.email == "alainbit88@gmail.com" && request.auth.token.email_verified == true) ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             data.role in ['admin', 'user'] &&
+             data.keys().hasOnly(['uid', 'email', 'role', 'displayName', 'photoURL', 'createdAt']);
+    }
+
+    function isValidTelemetry(data) {
+      return data.keys().hasAll(['userId', 'distanceFromEarth', 'distanceFromMoon', 'velocity', 'status', 'timestamp']) &&
+             data.userId == request.auth.uid &&
+             data.distanceFromEarth is number &&
+             data.distanceFromMoon is number &&
+             data.velocity is number &&
+             data.status is string &&
+             data.timestamp is timestamp &&
+             data.keys().hasOnly(['userId', 'distanceFromEarth', 'distanceFromMoon', 'velocity', 'status', 'timestamp', 'coordinates']);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /telemetry/{telemetryId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidTelemetry(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
